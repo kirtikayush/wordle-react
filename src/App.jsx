@@ -42,6 +42,19 @@ function App() {
       } else if (/^[a-zA-Z]$/.test(e.key)) {
         if (currentCol < WORD_LENGTH) {
           updateCell(currentRow, currentCol, e.key.toUpperCase());
+
+          // Add typing animation class
+          const cellElement = document.querySelector(
+            `.line:nth-child(${currentRow + 1}) .title:nth-child(${
+              currentCol + 1
+            })`
+          );
+          if (cellElement) {
+            cellElement.classList.remove("typing"); // reset in case of retyping fast
+            void cellElement.offsetWidth; // trigger reflow
+            cellElement.classList.add("typing");
+          }
+
           setCurrentCol(currentCol + 1);
         }
       } else if (e.key === "Enter") {
@@ -66,64 +79,110 @@ function App() {
   const submitGuess = () => {
     const guessWord = guesses[currentRow].join("").toLowerCase();
 
-    // Check if guess is in words.json
     if (!words.includes(guessWord)) {
       setMessage("Not a valid word!");
+
+      const currentLine = document.querySelector(
+        `.board .line:nth-child(${currentRow + 1})`
+      );
+      if (currentLine) {
+        currentLine.classList.remove("shake");
+        void currentLine.offsetWidth; // trigger reflow
+        currentLine.classList.add("shake");
+      }
+
       setTimeout(() => setMessage(""), 1500);
       return;
     }
 
-    // Reset message
     setMessage("");
 
-    const newColors = colors.map((r) => [...r]);
     const solutionLetters = solution.split("");
     const guessLetters = guesses[currentRow];
-
     const letterCount = {};
     solutionLetters.forEach((l) => {
       letterCount[l] = (letterCount[l] || 0) + 1;
     });
 
-    // First pass: green letters
+    const computedColors = Array(WORD_LENGTH).fill("gray");
+
+    // First pass: green
     for (let i = 0; i < WORD_LENGTH; i++) {
       if (guessLetters[i] === solutionLetters[i]) {
-        newColors[currentRow][i] = "green";
+        computedColors[i] = "green";
         letterCount[guessLetters[i]]--;
       }
     }
 
-    // Second pass: yellow and gray letters
+    // Second pass: yellow
     for (let i = 0; i < WORD_LENGTH; i++) {
-      if (newColors[currentRow][i] !== "green") {
-        if (
-          solutionLetters.includes(guessLetters[i]) &&
-          letterCount[guessLetters[i]] > 0
-        ) {
-          newColors[currentRow][i] = "yellow";
-          letterCount[guessLetters[i]]--;
-        } else {
-          newColors[currentRow][i] = "gray";
-        }
+      if (
+        computedColors[i] !== "green" &&
+        solutionLetters.includes(guessLetters[i]) &&
+        letterCount[guessLetters[i]] > 0
+      ) {
+        computedColors[i] = "yellow";
+        letterCount[guessLetters[i]]--;
       }
     }
 
-    setColors(newColors);
+    // Correct flip + color logic (no direct DOM manipulation here)
+    for (let i = 0; i < WORD_LENGTH; i++) {
+      setTimeout(() => {
+        // Step 1: Apply flip animation
+        setColors((prevColors) => {
+          const newColors = prevColors.map((r) => [...r]);
+          newColors[currentRow][i] = "flip";
+          return newColors;
+        });
 
-    // Check for win / game over
-    if (guessWord.toUpperCase() === solution) {
-      setGameOver(true);
-    } else if (currentRow + 1 >= MAX_GUESSES) {
-      setGameOver(true);
-    } else {
-      setCurrentRow(currentRow + 1);
-      setCurrentCol(0);
+        // Step 2: Apply final color after flip
+        setTimeout(() => {
+          setColors((prevColors) => {
+            const newColors = prevColors.map((r) => [...r]);
+            newColors[currentRow][i] = computedColors[i]; // green/yellow/gray
+            return newColors;
+          });
+        }, 400); // halfway through flip
+      }, i * 300); // staggered
     }
+
+    // Proceed after animation
+    setTimeout(() => {
+      if (guessWord.toUpperCase() === solution) {
+        setGameOver(true);
+      } else if (currentRow + 1 >= MAX_GUESSES) {
+        setGameOver(true);
+      } else {
+        setCurrentRow(currentRow + 1);
+        setCurrentCol(0);
+      }
+    }, WORD_LENGTH * 300 + 500); // properly adjusted timing
+  };
+
+  const resetGame = () => {
+    setGuesses(
+      Array(MAX_GUESSES)
+        .fill("")
+        .map(() => Array(WORD_LENGTH).fill(""))
+    );
+    setColors(
+      Array(MAX_GUESSES)
+        .fill("")
+        .map(() => Array(WORD_LENGTH).fill("empty"))
+    );
+    setCurrentRow(0);
+    setCurrentCol(0);
+    setGameOver(false);
+    setMessage("");
+
+    const randomIndex = Math.floor(Math.random() * words.length);
+    setSolution(words[randomIndex].toUpperCase());
   };
 
   return (
     <div className="board-container">
-      <h1>Wordle Clone</h1>
+      <h1>Wordle Maybe?</h1>
 
       <div className="board">
         {guesses.map((guessRow, rowIndex) => (
@@ -131,11 +190,17 @@ function App() {
         ))}
       </div>
 
-      {message && <div className="message">{message}</div>}
-
+      {/* Optional message (currently commented out) */}
+      {/* {message && <div className="message">{message}</div>} */}
+      {/* {solution} */}
       {gameOver && (
-        <div className="solution">
-          Solution: <strong>{solution}</strong>
+        <div className="game-over-container">
+          <div className="solution">
+            Solution: <strong>{solution}</strong>
+          </div>
+          <button className="reset-button" onClick={resetGame}>
+            New Game
+          </button>
         </div>
       )}
     </div>
