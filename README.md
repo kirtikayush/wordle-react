@@ -1,12 +1,71 @@
-# React + Vite
+# Wordle Maybe - React App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A simple Wordle clone built with React where players guess a 5-letter word in 6 tries.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Responsive Wordle grid with color-coded feedback
+- Shake animation for invalid words
+- Flip animation for letter evaluation
+- Game over screen with solution and reset option
+- Simple menubar with game instructions
 
-## Expanding the ESLint configuration
+## Technologies Used
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React (with hooks)
+- CSS animations for visual feedback
+- words.json (containing a list of valid 5-letter words)
+
+## Folder Structure
+
+wordle/
+├── public/
+├── src/
+│ ├── components/
+│ │ ├── Menubar/
+│ │ │ └── Menubar.jsx
+│ │ │ └── Menubar.css
+│ │ └── words.json
+│ ├── App.jsx
+│ ├── App.css
+│ ├── index.jsx
+├── package.json
+├── vite.config.js
+└── README.md
+
+## How to Run Locally
+
+1. Clone the repository
+
+   ```bash
+   git clone https://github.com/your-username/wordle.git
+   cd wordle
+   ```
+
+2. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+3. Start the development server
+
+   ```bash
+   npm run dev
+   ```
+
+4. Open the app in your browser at
+   ```
+   http://localhost:5173
+   ```
+
+## Gameplay Instructions
+
+- Guess the correct word in 6 tries.
+- Green indicates correct letter at correct position.
+- Yellow indicates correct letter at wrong position.
+- Gray indicates wrong letter.
+
+## License
+
+MIT License
