@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-import words from "./words.json"; // Array of valid 5-letter words
+import { useEffect, useRef, useState } from "react";
+import words from "./words.json";
 import "./App.css";
+import Menubar from "./components/Menubar/Menubar"; // Correct import
 
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
 
 function App() {
+  const inputRef = useRef(null);
+
   const [solution, setSolution] = useState("");
   const [guesses, setGuesses] = useState(
     Array(MAX_GUESSES)
@@ -22,72 +25,71 @@ function App() {
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Pick a random solution word
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * words.length);
     setSolution(words[randomIndex].toUpperCase());
   }, []);
 
-  // Keyboard input handling
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (gameOver) return;
-      if (currentRow >= MAX_GUESSES) return;
+    inputRef.current?.focus();
+  }, [currentRow]);
 
-      if (e.key === "Backspace") {
-        if (currentCol > 0) {
-          updateCell(currentRow, currentCol - 1, "");
-          setCurrentCol(currentCol - 1);
-        }
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        if (currentCol < WORD_LENGTH) {
-          updateCell(currentRow, currentCol, e.key.toUpperCase());
+  const handleKeyDown = (e) => {
+    if (gameOver) return;
+    if (currentRow >= MAX_GUESSES) return;
 
-          // Add typing animation class
-          const cellElement = document.querySelector(
-            `.line:nth-child(${currentRow + 1}) .title:nth-child(${
-              currentCol + 1
-            })`
-          );
-          if (cellElement) {
-            cellElement.classList.remove("typing"); // reset in case of retyping fast
-            void cellElement.offsetWidth; // trigger reflow
-            cellElement.classList.add("typing");
-          }
+    const key = e.key;
 
-          setCurrentCol(currentCol + 1);
-        }
-      } else if (e.key === "Enter") {
-        if (currentCol === WORD_LENGTH) {
-          submitGuess();
-        }
+    if (key === "Backspace") {
+      if (currentCol > 0) {
+        updateCell(currentRow, currentCol - 1, "");
+        setCurrentCol(currentCol - 1);
       }
-    };
+      e.preventDefault();
+    } else if (/^[a-zA-Z]$/.test(key)) {
+      if (currentCol < WORD_LENGTH) {
+        updateCell(currentRow, currentCol, key.toUpperCase());
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentRow, currentCol, guesses, solution, gameOver]);
+        const cellElement = document.querySelector(
+          `.line:nth-child(${currentRow + 1}) .title:nth-child(${
+            currentCol + 1
+          })`
+        );
+        if (cellElement) {
+          cellElement.classList.remove("typing");
+          void cellElement.offsetWidth;
+          cellElement.classList.add("typing");
+        }
 
-  // Update a specific cell
+        setCurrentCol(currentCol + 1);
+      }
+      e.preventDefault();
+    } else if (key === "Enter") {
+      if (currentCol === WORD_LENGTH) {
+        submitGuess();
+      }
+      e.preventDefault();
+    }
+  };
+
   const updateCell = (row, col, value) => {
     const newGuesses = guesses.map((r) => [...r]);
     newGuesses[row][col] = value;
     setGuesses(newGuesses);
   };
 
-  // Submit current guess
   const submitGuess = () => {
     const guessWord = guesses[currentRow].join("").toLowerCase();
 
     if (!words.includes(guessWord)) {
-      setMessage("Not a valid word!");
+      // setMessage("Not a valid word!");
 
       const currentLine = document.querySelector(
         `.board .line:nth-child(${currentRow + 1})`
       );
       if (currentLine) {
         currentLine.classList.remove("shake");
-        void currentLine.offsetWidth; // trigger reflow
+        void currentLine.offsetWidth;
         currentLine.classList.add("shake");
       }
 
@@ -106,7 +108,6 @@ function App() {
 
     const computedColors = Array(WORD_LENGTH).fill("gray");
 
-    // First pass: green
     for (let i = 0; i < WORD_LENGTH; i++) {
       if (guessLetters[i] === solutionLetters[i]) {
         computedColors[i] = "green";
@@ -114,7 +115,6 @@ function App() {
       }
     }
 
-    // Second pass: yellow
     for (let i = 0; i < WORD_LENGTH; i++) {
       if (
         computedColors[i] !== "green" &&
@@ -126,28 +126,24 @@ function App() {
       }
     }
 
-    // Correct flip + color logic (no direct DOM manipulation here)
     for (let i = 0; i < WORD_LENGTH; i++) {
       setTimeout(() => {
-        // Step 1: Apply flip animation
         setColors((prevColors) => {
           const newColors = prevColors.map((r) => [...r]);
           newColors[currentRow][i] = "flip";
           return newColors;
         });
 
-        // Step 2: Apply final color after flip
         setTimeout(() => {
           setColors((prevColors) => {
             const newColors = prevColors.map((r) => [...r]);
-            newColors[currentRow][i] = computedColors[i]; // green/yellow/gray
+            newColors[currentRow][i] = computedColors[i];
             return newColors;
           });
-        }, 400); // halfway through flip
-      }, i * 300); // staggered
+        }, 400);
+      }, i * 300);
     }
 
-    // Proceed after animation
     setTimeout(() => {
       if (guessWord.toUpperCase() === solution) {
         setGameOver(true);
@@ -157,7 +153,7 @@ function App() {
         setCurrentRow(currentRow + 1);
         setCurrentCol(0);
       }
-    }, WORD_LENGTH * 300 + 500); // properly adjusted timing
+    }, WORD_LENGTH * 300 + 500);
   };
 
   const resetGame = () => {
@@ -178,36 +174,58 @@ function App() {
 
     const randomIndex = Math.floor(Math.random() * words.length);
     setSolution(words[randomIndex].toUpperCase());
+    inputRef.current?.focus();
   };
 
   return (
-    <div className="board-container">
-      <h1>Wordle Maybe?</h1>
+    <>
+      <Menubar />
 
-      <div className="board">
-        {guesses.map((guessRow, rowIndex) => (
-          <Line key={rowIndex} guess={guessRow} colors={colors[rowIndex]} />
-        ))}
-      </div>
+      <div
+        className="board-container"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {/* <h1 style={{ color: "white" }}>Wordle Maybe?</h1> */}
 
-      {/* Optional message (currently commented out) */}
-      {/* {message && <div className="message">{message}</div>} */}
-      {/* {solution} */}
-      {gameOver && (
-        <div className="game-over-container">
-          <div className="solution">
-            Solution: <strong>{solution}</strong>
-          </div>
-          <button className="reset-button" onClick={resetGame}>
-            New Game
-          </button>
+        <input
+          type="text"
+          ref={inputRef}
+          autoFocus
+          style={{
+            position: "absolute",
+            opacity: 0,
+            height: 0,
+            width: 0,
+            top: 0,
+            left: 0,
+            zIndex: -1,
+          }}
+          onKeyDown={handleKeyDown}
+        />
+
+        <div className="board">
+          {guesses.map((guessRow, rowIndex) => (
+            <Line key={rowIndex} guess={guessRow} colors={colors[rowIndex]} />
+          ))}
         </div>
-      )}
-    </div>
+
+        {message && <div className="message">{message}</div>}
+
+        {gameOver && (
+          <div className="game-over-container">
+            <div className="solution">
+              Solution: <strong>{solution}</strong>
+            </div>
+            <button className="reset-button" onClick={resetGame}>
+              New Game
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
-// Single line (row) of the grid
 function Line({ guess, colors }) {
   return (
     <div className="line">

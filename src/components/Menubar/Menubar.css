@@ -1,0 +1,48 @@
+.menubar {
+    width: 100%;
+    height: 80px;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* space between title and help icon */
+    padding: 0 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    color: white;
+    z-index: 50;
+    border-radius: 0 0 20px 5px;
+    /* nice border radius */
+    box-sizing: border-box;
+}
+
+.menubar-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.help-icon {
+    width: 30px;
+    height: 30px;
+    background-color: #444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.popup {
+    position: absolute;
+    top: 90px;
+    /* below menubar */
+    right: 20px;
+    width: 250px;
+    background: #222;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    z-index: 100;
+}
